@@ -1,0 +1,189 @@
+
+<!doctype html>
+<html>
+
+<head>
+	<title>Visualisation</title>
+	<meta charset="utf-8">
+	<link rel="icon" href="../static/images/favicon.ico" />
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.4.0/Chart.min.js"></script>
+	<script src="../static/js/Chart.bundle.js"></script>
+	<script src="../static/js/utils.js"></script>
+	<style>
+	canvas {
+		-moz-user-select: none;
+		-webkit-user-select: none;
+		-ms-user-select: none;
+	}
+</style>
+</head>
+<body>
+	 <div class="container-fluid">
+	<div class="row">
+		<div class="col-sm-2"></div>
+		<div class="col-sm-8">
+			<center>
+				<h3> {{info.get('client')}} <span class="label label-info">{{info.get('situation')}}</span></h3>
+				<p><b>Num  : </b><code>{{info.get('num')}}</code></p>
+
+				<p><b>Info : </b><code> infos</code></p>
+				<div style="height:25px;"></div>
+
+				<hr>
+				<form class="form-inline" method="GET" action="/graph">
+					<div class="input-group">
+						<span class="input-group-addon"><b>Num</b></span>
+						<input type="number" class="form-control" name="num" required>
+					</div>
+					<div class="input-group" style="margin-left: 2.5em;">
+						<span class="input-group-addon"><b>Info</b></span>
+						<select class="form-control" name="Info">
+							<option>Info 1</option>
+							<option>info 2</option>
+							<!--<option>DC</option>-->
+						</select>
+					</div> 
+					<button type="submit" class="btn btn-success" style="margin-left: 2.5em;">Go ! </button>
+				</form>
+				<hr>
+			</center>
+			<div>
+				<canvas id="canvas">
+				</canvas>
+			</div>
+			<script>
+				var color = Chart.helpers.color;
+				var barChartData = {
+					labels: [{% for item in labels %}
+					"{{item}}",
+					{% endfor %}],
+					datasets: [{
+						type: 'bar',
+						label: 'CA',
+						backgroundColor: color(window.chartColors.green).alpha(0.2).rgbString(),
+						borderColor: window.chartColors.green,
+						data: [
+						{% for x in ca %}
+						{{x}},
+						{% endfor %}
+						],
+						yAxisID: 'y-axis-1', // ajout de 
+					}, {
+						type: 'bar',
+						label: 'Charge',
+						backgroundColor: color(window.chartColors.blue).alpha(0.2).rgbString(),
+						borderColor: window.chartColors.blue,
+						data: [
+						{% for x in charge %}
+						{{x}},
+						{% endfor %}
+						],
+						yAxisID: 'y-axis-1',	// ajout
+					},	{
+						type: 'line',
+						label: 'charge/ca',
+						fill: false,
+						borderColor: window.chartColors.red,
+						data: [
+						{% for x in ecart %}
+						{{x}},
+						{% endfor %}
+						],
+				yAxisID: 'y-axis-2',	// ajout
+			}]
+		};
+
+		// Define a plugin to provide data labels
+		Chart.plugins.register({
+			afterDatasetsDraw: function(chart) {
+				var ctx = chart.ctx;
+
+				chart.data.datasets.forEach(function(dataset, i) {
+					var meta = chart.getDatasetMeta(i);
+					if (!meta.hidden) {
+						meta.data.forEach(function(element, index) {
+							// Draw the text in black, with the specified font
+							ctx.fillStyle = 'rgb(0, 0, 0)';
+
+							var fontSize = 12;
+							var fontStyle = 'bold';
+							var fontFamily = 'Helvetica Neue';
+							ctx.font = Chart.helpers.fontString(fontSize, fontStyle, fontFamily);
+
+							// Just naively convert to string for now
+							var dataString = dataset.data[index].toString();
+
+							// Make sure alignment settings are correct
+							ctx.textAlign = 'center';
+							ctx.textBaseline = 'middle';
+
+							var padding = 5;
+							var position = element.tooltipPosition();
+							ctx.fillText(dataString, position.x, position.y - (fontSize / 2) - padding);
+						});
+					}
+				});
+			}
+		});
+
+
+		window.onload = function() {
+			var ctx = document.getElementById('canvas').getContext('2d');
+			window.myBar = new Chart(ctx, {
+				type: 'bar',
+				data: barChartData,
+				options: {
+					responsive: true,
+					title: {
+						display: false,
+						text: '{{client}}'
+					},
+					// ajouter ici
+					scales: {
+						yAxes: [{
+							type: 'linear', // only linear but allow scale type registration. This allows extensions to exist solely for log scale for instance
+							display: true,
+							position: 'left',
+							id: 'y-axis-1',
+						}, {
+							type: 'linear', // only linear but allow scale type registration. This allows extensions to exist solely for log scale for instance
+							display: true,
+							position: 'right',
+							id: 'y-axis-2',
+
+							// grid line settings
+							gridLines: {
+								drawOnChartArea: false, // only want the grid lines for one axis to show up
+							},
+						}],
+					}
+					// fin de l'ajout
+
+				}
+			});
+		};
+		
+	</script>
+	<br>
+	<br>
+
+
+</div>
+
+<div class="col-sm-2"></div>
+</div>
+
+<div class="row">
+		<div class="col-sm-2"></div>
+		<div class="col-sm-8">
+<br><br>
+</div>
+</div>
+</div>
+</body>
+
+</html>
